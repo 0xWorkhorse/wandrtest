@@ -383,7 +383,7 @@ export function FeedScreen() {
       </ScrollView>
 
       {/* Feed */}
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.feed}>
         {FEED_DATA.map(renderAdventure)}
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -461,6 +461,10 @@ export function FeedScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: Colors.offWhite,
+  },
+  feed: {
     flex: 1,
     backgroundColor: Colors.offWhite,
   },
