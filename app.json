@@ -42,6 +42,9 @@
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "experiments": {
+      "baseUrl": "/wandrtest"
+    }
   }
 }
