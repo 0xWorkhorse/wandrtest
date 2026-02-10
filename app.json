@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "WandrLust",
+    "slug": "wandrlust",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#081C15"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wandrlust.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "WandrLust uses your location to discover nearby adventures, verify your exploration, and power the Proof-of-Reality layer.",
+        "NSCameraUsageDescription": "WandrLust uses your camera to capture adventure moments and share verified experiences.",
+        "NSMotionUsageDescription": "WandrLust tracks your movement to earn WANDR Points through the Proof-of-Reality system."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#081C15"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "package": "com.wandrlust.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "ACTIVITY_RECOGNITION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font"
+    ]
+  }
+}
