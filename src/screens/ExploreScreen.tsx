@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
+import { Colors, Typography, Spacing, BorderRadius, Shadows, TAB_BAR_HEIGHT } from '../theme';
 import { Card, AnimatedPressable } from '../components';
 
 const CATEGORIES = [
@@ -387,7 +387,7 @@ export function ExploreScreen() {
         </View>
         )}
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: TAB_BAR_HEIGHT + Spacing.xxl }} />
       </ScrollView>
     </View>
   );

@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 export const Spacing = {
   xs: 4,
   sm: 8,
@@ -7,6 +9,9 @@ export const Spacing = {
   xxl: 48,
   xxxl: 64,
 } as const;
+
+/** Height of the bottom tab bar per platform, matching TabNavigator styles. */
+export const TAB_BAR_HEIGHT = Platform.select({ ios: 88, android: 64, default: 72 }) as number;
 
 export const BorderRadius = {
   sm: 8,

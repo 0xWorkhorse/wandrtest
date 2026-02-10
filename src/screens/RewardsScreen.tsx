@@ -11,7 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, BorderRadius } from '../theme';
+import { Colors, Typography, Spacing, BorderRadius, TAB_BAR_HEIGHT } from '../theme';
 import { Card, StatBadge, AnimatedPressable } from '../components';
 
 const LEADERBOARD = [
@@ -252,7 +252,7 @@ export function RewardsScreen() {
           ))}
         </View>
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: TAB_BAR_HEIGHT + Spacing.xxl }} />
       </ScrollView>
     </View>
   );

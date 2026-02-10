@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, BorderRadius } from '../theme';
+import { Colors, Typography, Spacing, BorderRadius, TAB_BAR_HEIGHT } from '../theme';
 import { AnimatedPressable } from '../components';
 
 /** Three bouncing dots for a polished "thinking" indicator */
@@ -388,7 +388,7 @@ export function AgentScreen() {
             </View>
           )}
 
-          <View style={{ height: 20 }} />
+          <View style={{ height: Spacing.md }} />
         </ScrollView>
 
         {/* Quick actions */}
@@ -637,7 +637,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    paddingTop: Spacing.sm,
+    paddingBottom: TAB_BAR_HEIGHT + Spacing.sm,
     backgroundColor: Colors.white,
     borderTopWidth: 1,
     borderTopColor: Colors.lightGray,

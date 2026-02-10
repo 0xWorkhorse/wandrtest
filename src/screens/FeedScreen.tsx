@@ -20,7 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, BorderRadius } from '../theme';
+import { Colors, Typography, Spacing, BorderRadius, TAB_BAR_HEIGHT } from '../theme';
 import { Avatar, Card, AnimatedPressable } from '../components';
 
 const LIKED_KEY = '@wandrlust/liked_posts';
@@ -385,7 +385,7 @@ export function FeedScreen() {
       {/* Feed */}
       <ScrollView showsVerticalScrollIndicator={false} style={styles.feed}>
         {FEED_DATA.map(renderAdventure)}
-        <View style={{ height: 100 }} />
+        <View style={{ height: TAB_BAR_HEIGHT + Spacing.xxl }} />
       </ScrollView>
 
       {/* Comment Modal */}

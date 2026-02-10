@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, BorderRadius } from '../theme';
+import { Colors, Typography, Spacing, BorderRadius, TAB_BAR_HEIGHT } from '../theme';
 import { Avatar, Card, AnimatedPressable } from '../components';
 
 const ONBOARDED_KEY = '@wandrlust/onboarded';
@@ -230,7 +230,7 @@ export function ProfileScreen() {
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: TAB_BAR_HEIGHT + Spacing.xxl }} />
       </ScrollView>
     </View>
   );
