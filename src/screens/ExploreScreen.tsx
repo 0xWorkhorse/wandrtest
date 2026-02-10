@@ -12,6 +12,7 @@ import {
   DimensionValue,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
 import { Card } from '../components';
@@ -108,6 +109,7 @@ const AGENT_SUGGESTIONS = [
 export function ExploreScreen() {
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
@@ -277,7 +279,19 @@ export function ExploreScreen() {
           )}
 
           {filteredSpots.map((spot) => (
-            <TouchableOpacity key={spot.id} activeOpacity={0.7}>
+            <TouchableOpacity
+              key={spot.id}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('SpotDetail', {
+                id: spot.id,
+                name: spot.name,
+                distance: spot.distance,
+                type: spot.type,
+                rating: spot.rating,
+                wandrPoints: spot.wandrPoints,
+                color: spot.color,
+              })}
+            >
               <Card style={styles.spotCard}>
                 <View style={styles.spotRow}>
                   <View style={[styles.spotImage, { backgroundColor: spot.color + '20' }]}>

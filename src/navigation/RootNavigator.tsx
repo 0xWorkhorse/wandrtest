@@ -3,9 +3,8 @@ import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { OnboardingScreen } from '../screens';
+import { OnboardingScreen, ProfileScreen, SpotDetailScreen } from '../screens';
 import { TabNavigator } from './TabNavigator';
-import { ProfileScreen } from '../screens';
 import { Colors } from '../theme';
 
 const Stack = createNativeStackNavigator();
@@ -46,6 +45,7 @@ export function RootNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Main" component={TabNavigator} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="SpotDetail" component={SpotDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

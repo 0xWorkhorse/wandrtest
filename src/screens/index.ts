@@ -5,3 +5,4 @@ export { AgentScreen } from './AgentScreen';
 export { RewardsScreen } from './RewardsScreen';
 export { ProfileScreen } from './ProfileScreen';
 export { CaptureScreen } from './CaptureScreen';
+export { SpotDetailScreen } from './SpotDetailScreen';
