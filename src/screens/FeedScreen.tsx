@@ -5,14 +5,11 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
 import { Avatar, Card } from '../components';
-
-const { width } = Dimensions.get('window');
 
 interface Adventure {
   id: string;

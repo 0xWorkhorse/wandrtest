@@ -5,12 +5,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
-  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
-
-const { width, height } = Dimensions.get('window');
 
 export function CaptureScreen() {
   const [mode, setMode] = useState<'photo' | 'video'>('photo');

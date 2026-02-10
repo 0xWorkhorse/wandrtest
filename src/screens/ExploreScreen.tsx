@@ -5,15 +5,12 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
-  Image,
+  useWindowDimensions,
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
 import { Card } from '../components';
-
-const { width, height } = Dimensions.get('window');
 
 const CATEGORIES = [
   { id: 'all', label: 'All', icon: 'globe-outline' as const },
@@ -86,6 +83,7 @@ const AGENT_SUGGESTIONS = [
 ];
 
 export function ExploreScreen() {
+  const { height } = useWindowDimensions();
   const [activeCategory, setActiveCategory] = useState('all');
 
   return (
@@ -93,7 +91,7 @@ export function ExploreScreen() {
       <StatusBar barStyle="dark-content" />
 
       {/* Map placeholder */}
-      <View style={styles.mapContainer}>
+      <View style={[styles.mapContainer, { height: height * 0.35 }]}>
         <View style={styles.mapPlaceholder}>
           <Ionicons name="map" size={48} color={Colors.sage} />
           <Text style={styles.mapText}>Interactive Map</Text>
@@ -259,7 +257,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.offWhite,
   },
   mapContainer: {
-    height: height * 0.35,
     position: 'relative',
   },
   mapPlaceholder: {
