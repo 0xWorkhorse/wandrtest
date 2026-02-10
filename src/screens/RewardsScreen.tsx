@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,13 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
-import { Card, StatBadge } from '../components';
+import { Card, StatBadge, AnimatedPressable } from '../components';
 
 const LEADERBOARD = [
   { rank: 1, name: 'Sierra Peaks', points: 48200, badge: 'Trailblazer' },
@@ -66,6 +67,16 @@ const ACTIVITY = [
 
 export function RewardsScreen() {
   const insets = useSafeAreaInsets();
+  const progressAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: 1,
+      duration: 1200,
+      delay: 400,
+      useNativeDriver: false,
+    }).start();
+  }, [progressAnim]);
 
   return (
     <View style={styles.container}>
@@ -104,7 +115,17 @@ export function RewardsScreen() {
               <Text style={styles.progressValue}>12,450 / 25,000</Text>
             </View>
             <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: '49.8%' }]} />
+              <Animated.View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: progressAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0%', '49.8%'],
+                    }),
+                  },
+                ]}
+              />
             </View>
           </View>
         </LinearGradient>
@@ -141,7 +162,7 @@ export function RewardsScreen() {
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: Spacing.md }}>
             {PERKS.map((perk) => (
-              <TouchableOpacity key={perk.id} activeOpacity={0.8}>
+              <AnimatedPressable key={perk.id} activeScale={0.96} haptic="light">
                 <Card style={styles.perkCard}>
                   <View style={styles.perkIconContainer}>
                     <Ionicons name={perk.icon} size={24} color={Colors.primary} />
@@ -154,7 +175,7 @@ export function RewardsScreen() {
                     <Text style={styles.perkCostText}>{perk.cost.toLocaleString()}</Text>
                   </View>
                 </Card>
-              </TouchableOpacity>
+              </AnimatedPressable>
             ))}
           </ScrollView>
         </View>
@@ -361,7 +382,7 @@ const styles = StyleSheet.create({
   perkBrand: {
     ...Typography.label,
     color: Colors.primaryLight,
-    fontSize: 9,
+    fontSize: 10,
     marginBottom: 2,
   },
   perkTitle: {

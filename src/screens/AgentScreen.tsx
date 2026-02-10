@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,53 @@ import {
   KeyboardAvoidingView,
   Platform,
   StatusBar,
+  Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
+import { AnimatedPressable } from '../components';
+
+/** Three bouncing dots for a polished "thinking" indicator */
+function TypingDots() {
+  const dot1 = useRef(new Animated.Value(0)).current;
+  const dot2 = useRef(new Animated.Value(0)).current;
+  const dot3 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const animate = (dot: Animated.Value, delay: number) =>
+      Animated.loop(
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(dot, { toValue: -6, duration: 300, useNativeDriver: true }),
+          Animated.timing(dot, { toValue: 0, duration: 300, useNativeDriver: true }),
+        ]),
+      );
+    const a1 = animate(dot1, 0);
+    const a2 = animate(dot2, 150);
+    const a3 = animate(dot3, 300);
+    a1.start(); a2.start(); a3.start();
+    return () => { a1.stop(); a2.stop(); a3.stop(); };
+  }, [dot1, dot2, dot3]);
+
+  return (
+    <View style={typingStyles.row}>
+      {[dot1, dot2, dot3].map((d, i) => (
+        <Animated.View
+          key={i}
+          style={[typingStyles.dot, { transform: [{ translateY: d }] }]}
+        />
+      ))}
+    </View>
+  );
+}
+
+const typingStyles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8, paddingHorizontal: 4 },
+  dot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: Colors.midGray },
+});
 
 interface Message {
   id: string;
@@ -204,6 +246,7 @@ export function AgentScreen() {
     setMessages((prev) => [...prev, userMsg]);
     setInputText('');
     setIsTyping(true);
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     const delay = 800 + Math.random() * 800;
     setTimeout(() => {
@@ -238,15 +281,17 @@ export function AgentScreen() {
   const renderMessage = (msg: Message) => {
     if (msg.type === 'suggestion') {
       return (
-        <TouchableOpacity
+        <AnimatedPressable
           key={msg.id}
           style={styles.suggestionBubble}
           onPress={() => sendMessage(msg.text)}
+          activeScale={0.96}
+          haptic="selection"
         >
           {msg.icon && <Ionicons name={msg.icon} size={16} color={Colors.primary} />}
           <Text style={styles.suggestionText}>{msg.text}</Text>
           <Ionicons name="arrow-forward" size={14} color={Colors.primaryLight} />
-        </TouchableOpacity>
+        </AnimatedPressable>
       );
     }
 
@@ -337,7 +382,7 @@ export function AgentScreen() {
                   <Ionicons name="sparkles" size={16} color={Colors.accentLight} />
                 </View>
                 <View style={styles.agentBubble}>
-                  <Text style={styles.typingText}>Thinking...</Text>
+                  <TypingDots />
                 </View>
               </View>
             </View>
@@ -354,14 +399,16 @@ export function AgentScreen() {
           style={styles.quickActions}
         >
           {QUICK_ACTIONS.map((action) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={action.id}
               style={styles.quickActionChip}
               onPress={() => sendMessage(action.label)}
+              activeScale={0.95}
+              haptic="selection"
             >
               <Ionicons name={action.icon} size={14} color={Colors.primary} />
               <Text style={styles.quickActionText}>{action.label}</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           ))}
         </ScrollView>
 
@@ -377,17 +424,19 @@ export function AgentScreen() {
             maxLength={500}
             onSubmitEditing={() => sendMessage()}
           />
-          <TouchableOpacity
+          <AnimatedPressable
             style={[styles.sendButton, inputText.trim() && styles.sendButtonActive]}
             onPress={() => sendMessage()}
             disabled={!inputText.trim()}
+            activeScale={0.85}
+            haptic="none"
           >
             <Ionicons
               name="arrow-up"
               size={20}
               color={inputText.trim() ? Colors.white : Colors.midGray}
             />
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
       </KeyboardAvoidingView>
     </View>

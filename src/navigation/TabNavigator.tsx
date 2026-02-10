@@ -1,14 +1,15 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, BorderRadius } from '../theme';
+import { Colors, Spacing, Shadows } from '../theme';
+import { AnimatedPressable } from '../components';
 import {
   ExploreScreen,
   FeedScreen,
   AgentScreen,
   RewardsScreen,
-  ProfileScreen,
   CaptureScreen,
 } from '../screens';
 
@@ -16,11 +17,41 @@ const Tab = createBottomTabNavigator();
 
 function CaptureTabButton({ onPress }: { onPress?: (e: any) => void }) {
   return (
-    <TouchableOpacity style={styles.captureButton} onPress={onPress} activeOpacity={0.8}>
-      <View style={styles.captureButtonInner}>
+    <AnimatedPressable
+      style={styles.captureButton}
+      onPress={() => onPress?.(undefined)}
+      activeScale={0.9}
+      haptic="medium"
+      accessibilityLabel="Capture adventure"
+    >
+      <LinearGradient
+        colors={[Colors.primaryLight, Colors.primary]}
+        style={styles.captureButtonInner}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
         <Ionicons name="add" size={28} color={Colors.white} />
-      </View>
-    </TouchableOpacity>
+      </LinearGradient>
+    </AnimatedPressable>
+  );
+}
+
+function TabIcon({
+  name,
+  focused,
+  color,
+  size,
+}: {
+  name: keyof typeof Ionicons.glyphMap;
+  focused: boolean;
+  color: string;
+  size: number;
+}) {
+  return (
+    <View style={styles.tabIconContainer}>
+      <Ionicons name={name} size={size} color={color} />
+      {focused && <View style={styles.activeIndicator} />}
+    </View>
   );
 }
 
@@ -40,8 +71,8 @@ export function TabNavigator() {
         name="Explore"
         component={ExploreScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="compass-outline" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name="compass-outline" color={color} size={size} focused={focused} />
           ),
         }}
       />
@@ -49,8 +80,8 @@ export function TabNavigator() {
         name="Adventures"
         component={FeedScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="globe-outline" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name="globe-outline" color={color} size={size} focused={focused} />
           ),
         }}
       />
@@ -67,8 +98,8 @@ export function TabNavigator() {
         name="Agent"
         component={AgentScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="sparkles-outline" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name="sparkles-outline" color={color} size={size} focused={focused} />
           ),
         }}
       />
@@ -76,8 +107,8 @@ export function TabNavigator() {
         name="Rewards"
         component={RewardsScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="trophy-outline" size={size} color={color} />
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabIcon name="trophy-outline" color={color} size={size} focused={focused} />
           ),
         }}
       />
@@ -91,11 +122,7 @@ const styles = StyleSheet.create({
     height: Platform.select({ ios: 88, android: 64, default: 72 }),
     backgroundColor: Colors.white,
     borderTopWidth: 0,
-    shadowColor: Colors.primaryDark,
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 8,
+    ...Shadows.lg,
     paddingBottom: Platform.select({ ios: 24, android: 8, default: 12 }),
     paddingTop: 8,
   },
@@ -104,6 +131,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 0,
     marginBottom: Platform.OS === 'web' ? 4 : 0,
+  },
+  tabIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activeIndicator: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.primary,
+    marginTop: 3,
   },
   captureButton: {
     top: -16,
@@ -114,13 +152,8 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    ...Shadows.glow,
   },
 });

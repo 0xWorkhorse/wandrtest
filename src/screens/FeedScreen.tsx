@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,14 +12,16 @@ import {
   Modal,
   FlatList,
   KeyboardAvoidingView,
+  Animated,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
-import { Avatar, Card } from '../components';
+import { Avatar, Card, AnimatedPressable } from '../components';
 
 const LIKED_KEY = '@wandrlust/liked_posts';
 const BOOKMARKED_KEY = '@wandrlust/bookmarked_posts';
@@ -199,6 +201,23 @@ export function FeedScreen() {
 
   const getCommentsForPost = (postId: string) => comments.filter((c) => c.postId === postId);
 
+  const likeAnimRefs = useRef<Record<string, Animated.Value>>({});
+  const getLikeAnim = useCallback((id: string) => {
+    if (!likeAnimRefs.current[id]) {
+      likeAnimRefs.current[id] = new Animated.Value(1);
+    }
+    return likeAnimRefs.current[id];
+  }, []);
+
+  const animatedToggleLike = useCallback((id: string) => {
+    const anim = getLikeAnim(id);
+    toggleLike(id);
+    Animated.sequence([
+      Animated.spring(anim, { toValue: 1.4, useNativeDriver: true, speed: 50 }),
+      Animated.spring(anim, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 8 }),
+    ]).start();
+  }, [getLikeAnim, toggleLike]);
+
   const renderAdventure = (adventure: Adventure) => {
     const isLiked = likedPosts.has(adventure.id);
     const isBookmarked = bookmarkedPosts.has(adventure.id);
@@ -254,39 +273,58 @@ export function FeedScreen() {
 
         {/* Actions */}
         <View style={styles.actions}>
-          <TouchableOpacity
+          <AnimatedPressable
             style={styles.actionButton}
-            onPress={() => toggleLike(adventure.id)}
+            onPress={() => animatedToggleLike(adventure.id)}
+            haptic="none"
+            activeScale={0.9}
           >
-            <Ionicons
-              name={isLiked ? 'heart' : 'heart-outline'}
-              size={22}
-              color={isLiked ? Colors.error : Colors.darkGray}
-            />
+            <Animated.View style={{ transform: [{ scale: getLikeAnim(adventure.id) }] }}>
+              <Ionicons
+                name={isLiked ? 'heart' : 'heart-outline'}
+                size={22}
+                color={isLiked ? Colors.error : Colors.darkGray}
+              />
+            </Animated.View>
             <Text style={[styles.actionText, isLiked && { color: Colors.error }]}>
               {adventure.likes + (isLiked ? 1 : 0)}
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
 
-          <TouchableOpacity style={styles.actionButton} onPress={() => openComments(adventure)}>
+          <AnimatedPressable
+            style={styles.actionButton}
+            onPress={() => openComments(adventure)}
+            haptic="light"
+            activeScale={0.9}
+          >
             <Ionicons name="chatbubble-outline" size={20} color={Colors.darkGray} />
             <Text style={styles.actionText}>
               {adventure.comments + getCommentsForPost(adventure.id).filter((c) => c.user === 'You').length}
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
 
-          <TouchableOpacity style={styles.actionButton} onPress={() => handleShare(adventure)}>
+          <AnimatedPressable
+            style={styles.actionButton}
+            onPress={() => handleShare(adventure)}
+            haptic="light"
+            activeScale={0.9}
+          >
             <Ionicons name="arrow-redo-outline" size={20} color={Colors.darkGray} />
             <Text style={styles.actionText}>Share</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
 
-          <TouchableOpacity style={styles.actionButton} onPress={() => toggleBookmark(adventure.id)}>
+          <AnimatedPressable
+            style={styles.actionButton}
+            onPress={() => toggleBookmark(adventure.id)}
+            haptic="none"
+            activeScale={0.9}
+          >
             <Ionicons
               name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
               size={20}
               color={isBookmarked ? Colors.primary : Colors.darkGray}
             />
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
       </Card>
     );
@@ -326,14 +364,21 @@ export function FeedScreen() {
           <Text style={styles.storyLabel}>Your Story</Text>
         </TouchableOpacity>
         {['Trail Mix', 'Summit Crew', 'Local Finds', 'Night Walks'].map((name, i) => (
-          <TouchableOpacity key={i} style={styles.storyItem}>
-            <View style={[styles.storyRing]}>
-              <Avatar name={name} size={56} />
-            </View>
+          <AnimatedPressable key={i} style={styles.storyItem} activeScale={0.95} haptic="selection">
+            <LinearGradient
+              colors={[Colors.accentLight, Colors.sunset, Colors.accent]}
+              style={styles.storyGradientRing}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.storyRingInner}>
+                <Avatar name={name} size={52} />
+              </View>
+            </LinearGradient>
             <Text style={styles.storyLabel} numberOfLines={1}>
               {name}
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         ))}
       </ScrollView>
 
@@ -474,11 +519,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: Colors.primary + '08',
   },
-  storyRing: {
-    padding: 2,
-    borderRadius: 32,
-    borderWidth: 2,
-    borderColor: Colors.accent,
+  storyGradientRing: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  storyRingInner: {
+    width: 55,
+    height: 55,
+    borderRadius: 27.5,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   storyLabel: {
     ...Typography.caption,

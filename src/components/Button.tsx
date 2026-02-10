@@ -1,13 +1,14 @@
 import React from 'react';
 import {
-  TouchableOpacity,
   Text,
   StyleSheet,
   ViewStyle,
   TextStyle,
   ActivityIndicator,
+  View,
 } from 'react-native';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
+import { AnimatedPressable } from './AnimatedPressable';
 
 interface ButtonProps {
   title: string;
@@ -19,6 +20,7 @@ interface ButtonProps {
   style?: ViewStyle;
   textStyle?: TextStyle;
   icon?: React.ReactNode;
+  accessibilityLabel?: string;
 }
 
 export function Button({
@@ -31,29 +33,30 @@ export function Button({
   style,
   textStyle,
   icon,
+  accessibilityLabel,
 }: ButtonProps) {
-  const buttonStyles = [
+  const buttonStyles: ViewStyle[] = [
     styles.base,
     styles[variant],
     styles[`size_${size}`],
-    disabled && styles.disabled,
-    style,
+    ...(style ? [style] : []),
   ];
 
-  const textStyles = [
+  const textStyles: TextStyle[] = [
     styles.text,
     styles[`text_${variant}`],
     styles[`textSize_${size}`],
-    disabled && styles.textDisabled,
-    textStyle,
+    ...(textStyle ? [textStyle] : []),
   ];
 
   return (
-    <TouchableOpacity
-      style={buttonStyles}
+    <AnimatedPressable
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.8}
+      activeScale={0.96}
+      haptic={variant === 'ghost' ? 'selection' : 'light'}
+      accessibilityLabel={accessibilityLabel || title}
+      style={buttonStyles}
     >
       {loading ? (
         <ActivityIndicator
@@ -61,17 +64,21 @@ export function Button({
           size="small"
         />
       ) : (
-        <>
+        <View style={styles.content}>
           {icon}
           <Text style={textStyles}>{title}</Text>
-        </>
+        </View>
       )}
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -106,9 +113,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.xl,
   },
-  disabled: {
-    opacity: 0.5,
-  },
   text: {
     ...Typography.button,
   },
@@ -132,8 +136,5 @@ const styles = StyleSheet.create({
   },
   textSize_lg: {
     fontSize: 18,
-  },
-  textDisabled: {
-    opacity: 0.7,
   },
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
-import { Colors, Spacing, BorderRadius } from '../theme';
+import { Colors, Spacing, BorderRadius, Shadows } from '../theme';
 
 interface CardProps {
   children: React.ReactNode;
@@ -24,11 +24,7 @@ const styles = StyleSheet.create({
   },
   elevated: {
     backgroundColor: Colors.white,
-    shadowColor: Colors.primaryDark,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    ...Shadows.md,
   },
   flat: {
     backgroundColor: Colors.offWhite,

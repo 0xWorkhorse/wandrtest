@@ -1,16 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  Animated,
+  Platform,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
+import { AnimatedPressable } from '../components';
 
 export function CaptureScreen() {
   const [mode, setMode] = useState<'photo' | 'video'>('photo');
+  const captureAnim = useRef(new Animated.Value(1)).current;
+  const [captured, setCaptured] = useState(false);
+
+  const handleCapture = useCallback(() => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    Animated.sequence([
+      Animated.timing(captureAnim, { toValue: 0.85, duration: 100, useNativeDriver: true }),
+      Animated.spring(captureAnim, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 8 }),
+    ]).start();
+    setCaptured(true);
+    setTimeout(() => setCaptured(false), 1500);
+  }, [captureAnim]);
+
+  const switchMode = useCallback((m: 'photo' | 'video') => {
+    if (Platform.OS !== 'web') Haptics.selectionAsync();
+    setMode(m);
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -64,22 +85,26 @@ export function CaptureScreen() {
       <View style={styles.bottomArea}>
         {/* Mode selector */}
         <View style={styles.modeSelector}>
-          <TouchableOpacity
+          <AnimatedPressable
             style={[styles.modeTab, mode === 'photo' && styles.modeTabActive]}
-            onPress={() => setMode('photo')}
+            onPress={() => switchMode('photo')}
+            haptic="none"
+            activeScale={0.95}
           >
             <Text style={[styles.modeText, mode === 'photo' && styles.modeTextActive]}>
               PHOTO
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </AnimatedPressable>
+          <AnimatedPressable
             style={[styles.modeTab, mode === 'video' && styles.modeTabActive]}
-            onPress={() => setMode('video')}
+            onPress={() => switchMode('video')}
+            haptic="none"
+            activeScale={0.95}
           >
             <Text style={[styles.modeText, mode === 'video' && styles.modeTextActive]}>
               VIDEO
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
 
         {/* Capture controls */}
@@ -92,16 +117,17 @@ export function CaptureScreen() {
           </TouchableOpacity>
 
           {/* Capture button */}
-          <TouchableOpacity style={styles.captureButton} activeOpacity={0.7}>
-            <View style={styles.captureOuter}>
+          <AnimatedPressable style={styles.captureButton} onPress={handleCapture} haptic="none" activeScale={1}>
+            <Animated.View style={[styles.captureOuter, { transform: [{ scale: captureAnim }] }]}>
               <View
                 style={[
                   styles.captureInner,
                   mode === 'video' && styles.captureInnerVideo,
+                  captured && styles.captureInnerFlash,
                 ]}
               />
-            </View>
-          </TouchableOpacity>
+            </Animated.View>
+          </AnimatedPressable>
 
           {/* Flip camera */}
           <TouchableOpacity style={styles.flipButton}>
@@ -294,6 +320,9 @@ const styles = StyleSheet.create({
     height: 30,
     borderRadius: 6,
     backgroundColor: Colors.error,
+  },
+  captureInnerFlash: {
+    backgroundColor: Colors.lightGray,
   },
   flipButton: {
     width: 48,

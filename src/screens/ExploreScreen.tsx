@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,12 +10,14 @@ import {
   StatusBar,
   Platform,
   DimensionValue,
+  Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, BorderRadius } from '../theme';
-import { Card } from '../components';
+import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
+import { Card, AnimatedPressable } from '../components';
 
 const CATEGORIES = [
   { id: 'all', label: 'All', icon: 'globe-outline' as const },
@@ -114,6 +116,23 @@ export function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const searchRef = useRef<TextInput>(null);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.8, duration: 1500, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
+      ]),
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [pulseAnim]);
+
+  const selectCategory = (id: string) => {
+    if (Platform.OS !== 'web') Haptics.selectionAsync();
+    setActiveCategory(id);
+  };
 
   const query = searchQuery.toLowerCase().trim();
 
@@ -169,7 +188,18 @@ export function ExploreScreen() {
           {/* Current location */}
           <View style={[styles.currentLocation, { top: '50%', left: '48%' }]}>
             <View style={styles.currentLocationDot} />
-            <View style={styles.currentLocationPulse} />
+            <Animated.View
+              style={[
+                styles.currentLocationPulse,
+                {
+                  transform: [{ scale: pulseAnim }],
+                  opacity: pulseAnim.interpolate({
+                    inputRange: [1, 1.8],
+                    outputRange: [0.4, 0],
+                  }),
+                },
+              ]}
+            />
           </View>
         </View>
 
@@ -228,13 +258,15 @@ export function ExploreScreen() {
           style={styles.categories}
         >
           {CATEGORIES.map((cat) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={cat.id}
               style={[
                 styles.categoryChip,
                 activeCategory === cat.id && styles.categoryChipActive,
               ]}
-              onPress={() => setActiveCategory(cat.id)}
+              onPress={() => selectCategory(cat.id)}
+              haptic="none"
+              activeScale={0.95}
             >
               <Ionicons
                 name={cat.icon}
@@ -249,7 +281,7 @@ export function ExploreScreen() {
               >
                 {cat.label}
               </Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           ))}
         </ScrollView>
 
@@ -279,9 +311,10 @@ export function ExploreScreen() {
           )}
 
           {filteredSpots.map((spot) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={spot.id}
-              activeOpacity={0.7}
+              activeScale={0.98}
+              haptic="light"
               onPress={() => navigation.navigate('SpotDetail', {
                 id: spot.id,
                 name: spot.name,
@@ -326,7 +359,7 @@ export function ExploreScreen() {
                   </View>
                 </View>
               </Card>
-            </TouchableOpacity>
+            </AnimatedPressable>
           ))}
         </View>
 
@@ -339,7 +372,7 @@ export function ExploreScreen() {
           </View>
 
           {filteredSuggestions.map((suggestion) => (
-            <TouchableOpacity key={suggestion.id} activeOpacity={0.7}>
+            <AnimatedPressable key={suggestion.id} activeScale={0.98} haptic="light">
               <Card style={styles.suggestionCard} variant="outlined">
                 <View style={styles.suggestionRow}>
                   <View style={styles.suggestionIcon}>
@@ -349,7 +382,7 @@ export function ExploreScreen() {
                   <Ionicons name="arrow-forward-circle" size={24} color={Colors.primaryLight} />
                 </View>
               </Card>
-            </TouchableOpacity>
+            </AnimatedPressable>
           ))}
         </View>
         )}
@@ -578,7 +611,7 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
   pointsLabel: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '700',
     color: Colors.primaryLight,
     letterSpacing: 0.5,

@@ -15,7 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
-import { Avatar, Card } from '../components';
+import { Avatar, Card, AnimatedPressable } from '../components';
 
 const ONBOARDED_KEY = '@wandrlust/onboarded';
 
@@ -172,14 +172,15 @@ export function ProfileScreen() {
 
           <View style={styles.gallery}>
             {ADVENTURE_GALLERY.map((item) => (
-              <TouchableOpacity
+              <AnimatedPressable
                 key={item.id}
                 style={[styles.galleryItem, { backgroundColor: item.color + '20' }]}
-                activeOpacity={0.7}
+                activeScale={0.95}
+                haptic="light"
               >
                 <Ionicons name={item.icon} size={28} color={item.color} />
                 <Text style={[styles.galleryLabel, { color: item.color }]}>{item.label}</Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             ))}
           </View>
         </View>
@@ -189,17 +190,19 @@ export function ProfileScreen() {
           <Text style={styles.sectionTitle}>Settings</Text>
           <Card style={styles.settingsCard}>
             {SETTINGS_ITEMS.map((item, index) => (
-              <TouchableOpacity
+              <AnimatedPressable
                 key={item.id}
                 style={[
                   styles.settingsItem,
                   index < SETTINGS_ITEMS.length - 1 && styles.settingsItemBorder,
                 ]}
+                activeScale={0.99}
+                haptic="selection"
               >
                 <Ionicons name={item.icon} size={20} color={Colors.primary} />
                 <Text style={styles.settingsLabel}>{item.label}</Text>
                 <Ionicons name="chevron-forward" size={18} color={Colors.midGray} />
-              </TouchableOpacity>
+              </AnimatedPressable>
             ))}
           </Card>
         </View>
@@ -313,7 +316,7 @@ const styles = StyleSheet.create({
     ...Typography.label,
     color: Colors.stone,
     marginTop: 2,
-    fontSize: 10,
+    fontSize: 11,
   },
   section: {
     paddingHorizontal: Spacing.md,

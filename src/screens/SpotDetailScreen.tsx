@@ -13,8 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, BorderRadius } from '../theme';
-import { Avatar, Card } from '../components';
+import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
+import { Avatar, Card, AnimatedPressable } from '../components';
 
 type SpotParams = {
   SpotDetail: {
@@ -220,9 +220,10 @@ export function SpotDetailScreen() {
             </TouchableOpacity>
           </View>
         ) : (
-          <TouchableOpacity
+          <AnimatedPressable
             style={styles.startButton}
-            activeOpacity={0.85}
+            activeScale={0.97}
+            haptic="medium"
             onPress={handleStartAdventure}
           >
             <LinearGradient
@@ -235,7 +236,7 @@ export function SpotDetailScreen() {
               <Text style={styles.startButtonText}>Start Adventure</Text>
               <Text style={styles.startButtonPoints}>+{spot.wandrPoints} WANDR</Text>
             </LinearGradient>
-          </TouchableOpacity>
+          </AnimatedPressable>
         )}
       </View>
     </View>
@@ -373,7 +374,7 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
   pointsLabel: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '700',
     color: Colors.primaryLight,
     letterSpacing: 0.5,
@@ -445,8 +446,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     paddingTop: Spacing.sm,
     paddingHorizontal: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.lightGray,
+    ...Shadows.lg,
   },
   startButton: {
     borderRadius: BorderRadius.lg,
