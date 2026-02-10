@@ -14,7 +14,7 @@ import {
 } from '../screens';
 
 const Tab = createBottomTabNavigator();
-const BUILD_VERSION = '1.0.7';
+const BUILD_VERSION = '1.0.8';
 
 function CaptureTabButton({ onPress }: { onPress?: (e: any) => void }) {
   return (

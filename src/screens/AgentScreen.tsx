@@ -611,6 +611,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.lightGray,
     backgroundColor: Colors.white,
+    flexGrow: 0,
+    flexShrink: 0,
   },
   quickActionsContent: {
     padding: Spacing.sm,
@@ -643,6 +645,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.lightGray,
     gap: Spacing.sm,
+    flexShrink: 0,
   },
   input: {
     flex: 1,

@@ -476,6 +476,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingBottom: Spacing.md,
     backgroundColor: Colors.white,
+    flexShrink: 0,
   },
   headerTitle: {
     ...Typography.h1,
@@ -503,6 +504,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderBottomWidth: 1,
     borderBottomColor: Colors.lightGray,
+    flexGrow: 0,
+    flexShrink: 0,
   },
   storiesContent: {
     paddingHorizontal: Spacing.md,

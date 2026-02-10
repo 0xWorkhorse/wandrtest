@@ -400,6 +400,7 @@ const styles = StyleSheet.create({
   },
   mapContainer: {
     position: 'relative',
+    flexShrink: 0,
   },
   mapPlaceholder: {
     flex: 1,
@@ -517,6 +518,8 @@ const styles = StyleSheet.create({
   },
   categories: {
     marginBottom: Spacing.md,
+    flexGrow: 0,
+    flexShrink: 0,
   },
   categoriesContent: {
     paddingHorizontal: Spacing.md,
