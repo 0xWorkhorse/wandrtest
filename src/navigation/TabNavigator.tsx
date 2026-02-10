@@ -14,6 +14,7 @@ import {
 } from '../screens';
 
 const Tab = createBottomTabNavigator();
+const BUILD_VERSION = '1.0.6';
 
 function CaptureTabButton({ onPress }: { onPress?: (e: any) => void }) {
   return (
@@ -57,6 +58,7 @@ function TabIcon({
 
 export function TabNavigator() {
   return (
+    <View style={{ flex: 1 }}>
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
@@ -113,6 +115,10 @@ export function TabNavigator() {
         }}
       />
     </Tab.Navigator>
+    <View style={styles.buildBadge} pointerEvents="none">
+      <Text style={styles.buildText}>v{BUILD_VERSION}</Text>
+    </View>
+    </View>
   );
 }
 
@@ -155,5 +161,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...Shadows.glow,
+  },
+  buildBadge: {
+    position: 'absolute',
+    bottom: Platform.select({ ios: 94, android: 70, default: 78 }),
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  buildText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: '700',
+    fontFamily: Platform.OS === 'web' ? 'monospace' : undefined,
   },
 });
