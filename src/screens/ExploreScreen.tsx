@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   useWindowDimensions,
   StatusBar,
+  Platform,
+  DimensionValue,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
 import { Card } from '../components';
@@ -20,6 +24,15 @@ const CATEGORIES = [
   { id: 'wildlife', label: 'Wildlife', icon: 'leaf-outline' as const },
   { id: 'hidden', label: 'Hidden Gems', icon: 'diamond-outline' as const },
 ];
+
+const CATEGORY_TYPE_MAP: Record<string, string[]> = {
+  all: [],
+  trails: ['Trail'],
+  cafes: ['Cafe'],
+  views: ['View'],
+  wildlife: ['Wildlife'],
+  hidden: ['Hidden Gem'],
+};
 
 const NEARBY_SPOTS = [
   {
@@ -62,6 +75,16 @@ const NEARBY_SPOTS = [
     image: null,
     color: Colors.sage,
   },
+  {
+    id: '5',
+    name: 'The Whispering Arch',
+    distance: '4.1 km',
+    type: 'Hidden Gem',
+    rating: 5.0,
+    wandrPoints: 500,
+    image: null,
+    color: Colors.accent,
+  },
 ];
 
 const AGENT_SUGGESTIONS = [
@@ -84,7 +107,27 @@ const AGENT_SUGGESTIONS = [
 
 export function ExploreScreen() {
   const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchRef = useRef<TextInput>(null);
+
+  const query = searchQuery.toLowerCase().trim();
+
+  const filteredSpots = NEARBY_SPOTS.filter((spot) => {
+    const matchesCategory =
+      activeCategory === 'all' || (CATEGORY_TYPE_MAP[activeCategory] || []).includes(spot.type);
+    const matchesSearch =
+      !query ||
+      spot.name.toLowerCase().includes(query) ||
+      spot.type.toLowerCase().includes(query);
+    return matchesCategory && matchesSearch;
+  });
+
+  const filteredSuggestions = AGENT_SUGGESTIONS.filter(
+    (s) => !query || s.text.toLowerCase().includes(query),
+  );
 
   return (
     <View style={styles.container}>
@@ -97,19 +140,29 @@ export function ExploreScreen() {
           <Text style={styles.mapText}>Interactive Map</Text>
           <Text style={styles.mapSubtext}>Discover nearby adventures</Text>
 
-          {/* Fake map pins */}
-          <View style={[styles.mapPin, { top: '30%', left: '25%' }]}>
-            <Ionicons name="location" size={24} color={Colors.primary} />
-          </View>
-          <View style={[styles.mapPin, { top: '45%', left: '60%' }]}>
-            <Ionicons name="location" size={24} color={Colors.sunset} />
-          </View>
-          <View style={[styles.mapPin, { top: '20%', left: '70%' }]}>
-            <Ionicons name="location" size={24} color={Colors.accent} />
-          </View>
-          <View style={[styles.mapPin, { top: '55%', left: '35%' }]}>
-            <Ionicons name="location" size={24} color={Colors.sage} />
-          </View>
+          {/* Fake map pins — highlight ones matching search */}
+          {NEARBY_SPOTS.map((spot, i) => {
+            const positions: { top: DimensionValue; left: DimensionValue }[] = [
+              { top: '30%', left: '25%' },
+              { top: '45%', left: '60%' },
+              { top: '20%', left: '70%' },
+              { top: '55%', left: '35%' },
+              { top: '38%', left: '50%' },
+            ];
+            const isMatch =
+              query &&
+              (spot.name.toLowerCase().includes(query) ||
+                spot.type.toLowerCase().includes(query));
+            return (
+              <View key={spot.id} style={[styles.mapPin, positions[i]]}>
+                <Ionicons
+                  name="location"
+                  size={isMatch ? 32 : 24}
+                  color={isMatch ? Colors.error : spot.color}
+                />
+              </View>
+            );
+          })}
 
           {/* Current location */}
           <View style={[styles.currentLocation, { top: '50%', left: '48%' }]}>
@@ -119,12 +172,34 @@ export function ExploreScreen() {
         </View>
 
         {/* Search bar overlay */}
-        <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color={Colors.stone} />
-          <Text style={styles.searchText}>Search adventures nearby...</Text>
-          <TouchableOpacity style={styles.filterButton}>
-            <Ionicons name="options-outline" size={20} color={Colors.primary} />
-          </TouchableOpacity>
+        <View style={[styles.searchBar, { top: Math.max(insets.top, 12) + 8 }]}>
+          <Ionicons name="search" size={20} color={searchFocused ? Colors.primary : Colors.stone} />
+          <TextInput
+            ref={searchRef}
+            style={styles.searchInput}
+            placeholder="Search adventures nearby..."
+            placeholderTextColor={Colors.midGray}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 ? (
+            <TouchableOpacity
+              style={styles.filterButton}
+              onPress={() => {
+                setSearchQuery('');
+                searchRef.current?.blur();
+              }}
+            >
+              <Ionicons name="close-circle" size={20} color={Colors.midGray} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.filterButton}>
+              <Ionicons name="options-outline" size={20} color={Colors.primary} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -179,13 +254,29 @@ export function ExploreScreen() {
         {/* Nearby spots */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Nearby Adventures</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAll}>See all</Text>
-            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>
+              {query ? `Results for "${searchQuery}"` : 'Nearby Adventures'}
+            </Text>
+            {!query && (
+              <TouchableOpacity>
+                <Text style={styles.seeAll}>See all</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
-          {NEARBY_SPOTS.map((spot) => (
+          {filteredSpots.length === 0 && (
+            <Card style={styles.emptyCard}>
+              <View style={styles.emptyState}>
+                <Ionicons name="search-outline" size={32} color={Colors.midGray} />
+                <Text style={styles.emptyTitle}>No adventures found</Text>
+                <Text style={styles.emptySubtext}>
+                  Try a different search or explore another category
+                </Text>
+              </View>
+            </Card>
+          )}
+
+          {filteredSpots.map((spot) => (
             <TouchableOpacity key={spot.id} activeOpacity={0.7}>
               <Card style={styles.spotCard}>
                 <View style={styles.spotRow}>
@@ -198,7 +289,9 @@ export function ExploreScreen() {
                           ? 'eye'
                           : spot.type === 'Cafe'
                           ? 'cafe'
-                          : 'leaf'
+                          : spot.type === 'Wildlife'
+                          ? 'leaf'
+                          : 'diamond'
                       }
                       size={24}
                       color={spot.color}
@@ -224,13 +317,14 @@ export function ExploreScreen() {
         </View>
 
         {/* Agent suggestions */}
+        {filteredSuggestions.length > 0 && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Agent Suggestions</Text>
             <Ionicons name="sparkles" size={18} color={Colors.accent} />
           </View>
 
-          {AGENT_SUGGESTIONS.map((suggestion) => (
+          {filteredSuggestions.map((suggestion) => (
             <TouchableOpacity key={suggestion.id} activeOpacity={0.7}>
               <Card style={styles.suggestionCard} variant="outlined">
                 <View style={styles.suggestionRow}>
@@ -244,6 +338,7 @@ export function ExploreScreen() {
             </TouchableOpacity>
           ))}
         </View>
+        )}
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -299,7 +394,6 @@ const styles = StyleSheet.create({
   },
   searchBar: {
     position: 'absolute',
-    top: 60,
     left: Spacing.md,
     right: Spacing.md,
     backgroundColor: Colors.white,
@@ -307,21 +401,39 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md - 2,
+    paddingVertical: Platform.OS === 'web' ? Spacing.sm : Spacing.md - 2,
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
-  searchText: {
+  searchInput: {
     ...Typography.body,
-    color: Colors.midGray,
+    color: Colors.charcoal,
     flex: 1,
     marginLeft: Spacing.sm,
+    padding: 0,
   },
   filterButton: {
     padding: Spacing.xs,
+  },
+  emptyCard: {
+    marginBottom: Spacing.sm,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: Spacing.xl,
+  },
+  emptyTitle: {
+    ...Typography.bodyBold,
+    color: Colors.darkGray,
+    marginTop: Spacing.sm,
+  },
+  emptySubtext: {
+    ...Typography.caption,
+    color: Colors.midGray,
+    marginTop: Spacing.xs,
   },
   bottomSheet: {
     flex: 1,

@@ -88,7 +88,7 @@ export function TabNavigator() {
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
-    height: Platform.OS === 'ios' ? 88 : 64,
+    height: Platform.select({ ios: 88, android: 64, default: 72 }),
     backgroundColor: Colors.white,
     borderTopWidth: 0,
     shadowColor: Colors.primaryDark,
@@ -96,13 +96,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 12,
     elevation: 8,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+    paddingBottom: Platform.select({ ios: 24, android: 8, default: 12 }),
     paddingTop: 8,
   },
   tabBarLabel: {
     fontSize: 10,
     fontWeight: '600',
-    marginTop: -2,
+    marginTop: 0,
+    marginBottom: Platform.OS === 'web' ? 4 : 0,
   },
   captureButton: {
     top: -16,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,24 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  Share,
+  Platform,
+  TextInput,
+  Modal,
+  FlatList,
+  KeyboardAvoidingView,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
 import { Avatar, Card } from '../components';
+
+const LIKED_KEY = '@wandrlust/liked_posts';
+const BOOKMARKED_KEY = '@wandrlust/bookmarked_posts';
+const COMMENTS_KEY = '@wandrlust/comments';
 
 interface Adventure {
   id: string;
@@ -89,20 +103,105 @@ const FEED_DATA: Adventure[] = [
   },
 ];
 
+interface Comment {
+  id: string;
+  postId: string;
+  user: string;
+  text: string;
+  timeAgo: string;
+}
+
+const SEED_COMMENTS: Comment[] = [
+  { id: 'c1', postId: '1', user: 'Trail Mix', text: 'Incredible find! Adding this to my list.', timeAgo: '1h ago' },
+  { id: 'c2', postId: '1', user: 'Nomad Trail', text: 'The PCT never disappoints.', timeAgo: '45m ago' },
+  { id: 'c3', postId: '2', user: 'Dew Walker', text: 'Your Agent is on point! Mine suggested the same grove.', timeAgo: '3h ago' },
+  { id: 'c4', postId: '2', user: 'Sierra Peaks', text: 'Bamboo groves hit different at dawn.', timeAgo: '2h ago' },
+  { id: 'c5', postId: '3', user: 'Atlas Rover', text: '1200m gain is no joke. Major respect!', timeAgo: '20h ago' },
+  { id: 'c6', postId: '4', user: 'Summit Crew', text: 'Portland has so many hidden gems.', timeAgo: '1h ago' },
+];
+
 export function FeedScreen() {
+  const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+  const [bookmarkedPosts, setBookmarkedPosts] = useState<Set<string>>(new Set());
+  const [comments, setComments] = useState<Comment[]>(SEED_COMMENTS);
+  const [commentModalPost, setCommentModalPost] = useState<Adventure | null>(null);
+  const [commentText, setCommentText] = useState('');
+
+  useEffect(() => {
+    AsyncStorage.getItem(LIKED_KEY).then((value) => {
+      if (value) setLikedPosts(new Set(JSON.parse(value)));
+    });
+    AsyncStorage.getItem(BOOKMARKED_KEY).then((value) => {
+      if (value) setBookmarkedPosts(new Set(JSON.parse(value)));
+    });
+    AsyncStorage.getItem(COMMENTS_KEY).then((value) => {
+      if (value) setComments([...SEED_COMMENTS, ...JSON.parse(value)]);
+    });
+  }, []);
 
   const toggleLike = (id: string) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setLikedPosts((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      AsyncStorage.setItem(LIKED_KEY, JSON.stringify([...next]));
       return next;
     });
   };
 
+  const toggleBookmark = (id: string) => {
+    if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setBookmarkedPosts((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      AsyncStorage.setItem(BOOKMARKED_KEY, JSON.stringify([...next]));
+      return next;
+    });
+  };
+
+  const handleShare = async (adventure: Adventure) => {
+    try {
+      await Share.share({
+        message: `Check out this adventure by ${adventure.user.name} at ${adventure.location}! "${adventure.description.slice(0, 100)}..." — Shared via WandrLust`,
+      });
+    } catch {
+      // user cancelled
+    }
+  };
+
+  const openComments = (adventure: Adventure) => {
+    setCommentModalPost(adventure);
+    setCommentText('');
+  };
+
+  const submitComment = () => {
+    if (!commentText.trim() || !commentModalPost) return;
+    const newComment: Comment = {
+      id: `c-${Date.now()}`,
+      postId: commentModalPost.id,
+      user: 'You',
+      text: commentText.trim(),
+      timeAgo: 'now',
+    };
+    setComments((prev) => {
+      const next = [...prev, newComment];
+      const userComments = next.filter((c) => c.user === 'You');
+      AsyncStorage.setItem(COMMENTS_KEY, JSON.stringify(userComments));
+      return next;
+    });
+    setCommentText('');
+    if (Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const getCommentsForPost = (postId: string) => comments.filter((c) => c.postId === postId);
+
   const renderAdventure = (adventure: Adventure) => {
     const isLiked = likedPosts.has(adventure.id);
+    const isBookmarked = bookmarkedPosts.has(adventure.id);
 
     return (
       <Card key={adventure.id} style={styles.adventureCard}>
@@ -169,35 +268,46 @@ export function FeedScreen() {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => openComments(adventure)}>
             <Ionicons name="chatbubble-outline" size={20} color={Colors.darkGray} />
-            <Text style={styles.actionText}>{adventure.comments}</Text>
+            <Text style={styles.actionText}>
+              {adventure.comments + getCommentsForPost(adventure.id).filter((c) => c.user === 'You').length}
+            </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => handleShare(adventure)}>
             <Ionicons name="arrow-redo-outline" size={20} color={Colors.darkGray} />
             <Text style={styles.actionText}>Share</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="bookmark-outline" size={20} color={Colors.darkGray} />
+          <TouchableOpacity style={styles.actionButton} onPress={() => toggleBookmark(adventure.id)}>
+            <Ionicons
+              name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
+              size={20}
+              color={isBookmarked ? Colors.primary : Colors.darkGray}
+            />
           </TouchableOpacity>
         </View>
       </Card>
     );
   };
 
+  const postComments = commentModalPost ? getCommentsForPost(commentModalPost.id) : [];
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 12 }]}>
         <Text style={styles.headerTitle}>Adventures</Text>
         <View style={styles.headerActions}>
           <TouchableOpacity style={styles.headerButton}>
             <Ionicons name="notifications-outline" size={24} color={Colors.charcoal} />
             <View style={styles.notificationDot} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+            <Avatar name="You" size={32} />
           </TouchableOpacity>
         </View>
       </View>
@@ -232,6 +342,74 @@ export function FeedScreen() {
         {FEED_DATA.map(renderAdventure)}
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* Comment Modal */}
+      <Modal
+        visible={!!commentModalPost}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setCommentModalPost(null)}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <TouchableOpacity style={styles.modalBackdrop} onPress={() => setCommentModalPost(null)} />
+          <View style={[styles.commentSheet, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+            {/* Sheet handle */}
+            <View style={styles.sheetHandle} />
+            <View style={styles.commentHeader}>
+              <Text style={styles.commentHeaderTitle}>Comments</Text>
+              <TouchableOpacity onPress={() => setCommentModalPost(null)}>
+                <Ionicons name="close" size={24} color={Colors.darkGray} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Comments list */}
+            <FlatList
+              data={postComments}
+              keyExtractor={(item) => item.id}
+              style={styles.commentList}
+              ListEmptyComponent={
+                <Text style={styles.emptyComments}>No comments yet. Be the first!</Text>
+              }
+              renderItem={({ item }) => (
+                <View style={styles.commentItem}>
+                  <Avatar name={item.user} size={32} />
+                  <View style={styles.commentContent}>
+                    <View style={styles.commentNameRow}>
+                      <Text style={styles.commentUser}>{item.user}</Text>
+                      <Text style={styles.commentTime}>{item.timeAgo}</Text>
+                    </View>
+                    <Text style={styles.commentTextBody}>{item.text}</Text>
+                  </View>
+                </View>
+              )}
+            />
+
+            {/* Input */}
+            <View style={styles.commentInputRow}>
+              <Avatar name="You" size={32} />
+              <TextInput
+                style={styles.commentInput}
+                placeholder="Add a comment..."
+                placeholderTextColor={Colors.midGray}
+                value={commentText}
+                onChangeText={setCommentText}
+                onSubmitEditing={submitComment}
+                returnKeyType="send"
+              />
+              <TouchableOpacity
+                onPress={submitComment}
+                disabled={!commentText.trim()}
+                style={[styles.sendButton, !commentText.trim() && { opacity: 0.4 }]}
+              >
+                <Ionicons name="send" size={20} color={Colors.primary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -246,7 +424,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
-    paddingTop: 60,
     paddingBottom: Spacing.md,
     backgroundColor: Colors.white,
   },
@@ -409,5 +586,99 @@ const styles = StyleSheet.create({
   actionText: {
     ...Typography.small,
     color: Colors.darkGray,
+  },
+  // Comment modal styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  commentSheet: {
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    maxHeight: '70%',
+    minHeight: 320,
+  },
+  sheetHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.lightGray,
+    alignSelf: 'center',
+    marginTop: Spacing.sm,
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.lightGray,
+  },
+  commentHeaderTitle: {
+    ...Typography.bodyBold,
+    color: Colors.charcoal,
+  },
+  commentList: {
+    flex: 1,
+    paddingHorizontal: Spacing.md,
+  },
+  emptyComments: {
+    ...Typography.body,
+    color: Colors.midGray,
+    textAlign: 'center',
+    marginTop: Spacing.xl,
+  },
+  commentItem: {
+    flexDirection: 'row',
+    paddingVertical: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  commentContent: {
+    flex: 1,
+  },
+  commentNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  commentUser: {
+    ...Typography.smallBold,
+    color: Colors.charcoal,
+  },
+  commentTime: {
+    ...Typography.caption,
+    color: Colors.midGray,
+  },
+  commentTextBody: {
+    ...Typography.body,
+    color: Colors.darkGray,
+    marginTop: 2,
+  },
+  commentInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: Colors.lightGray,
+    gap: Spacing.sm,
+  },
+  commentInput: {
+    flex: 1,
+    ...Typography.body,
+    backgroundColor: Colors.offWhite,
+    borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    color: Colors.charcoal,
+  },
+  sendButton: {
+    padding: Spacing.xs,
   },
 });

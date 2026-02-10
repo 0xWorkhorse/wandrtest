@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
@@ -64,13 +65,15 @@ const ACTIVITY = [
 ];
 
 export function RewardsScreen() {
+  const insets = useSafeAreaInsets();
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header with balance */}
-        <LinearGradient colors={Colors.gradientForest} style={styles.header}>
+        <LinearGradient colors={Colors.gradientForest} style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 12 }]}>
           <Text style={styles.headerLabel}>YOUR REWARDS</Text>
           <Text style={styles.headerTitle}>Proof of Reality</Text>
 
@@ -240,7 +243,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.offWhite,
   },
   header: {
-    paddingTop: 60,
     paddingBottom: Spacing.xl,
     paddingHorizontal: Spacing.md,
   },

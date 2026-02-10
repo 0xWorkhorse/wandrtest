@@ -10,6 +10,7 @@ import {
   Platform,
   StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
@@ -73,35 +74,165 @@ const QUICK_ACTIONS = [
   { id: '4', label: 'Quiet spots', icon: 'leaf-outline' as const },
 ];
 
+interface AgentResponse {
+  text: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  suggestions?: string[];
+}
+
+function getAgentResponse(userText: string): AgentResponse {
+  const lower = userText.toLowerCase();
+
+  if (lower.includes('trail') || lower.includes('hike') || lower.includes('walk')) {
+    return {
+      text: "I found 3 trails near you right now:\n\n1. Misty Ridge Trail — 1.2 km, gentle elevation, low crowd density. Great for a peaceful walk.\n2. Cedar Loop — 2.8 km, moderate, just opened last week. Stunning old-growth forest.\n3. Fern Valley North — 3.2 km, easy, the one I mentioned earlier.\n\nMisty Ridge has the fewest people right now. Want me to guide you there?",
+      icon: 'trail-sign-outline',
+      suggestions: ['Guide me to Misty Ridge', 'Tell me more about Cedar Loop'],
+    };
+  }
+
+  if (lower.includes('cafe') || lower.includes('coffee') || lower.includes('eat') || lower.includes('food') || lower.includes('restaurant')) {
+    return {
+      text: "There's a hidden gem 0.5 km from you — The Mossy Stone Cafe. Locally roasted coffee, outdoor seating overlooking a small creek. Open until 5 PM.\n\nIf you're looking for something after your hike, the Trailhead Kitchen is 1.8 km away with great sandwiches and a warm fireplace. Both have strong reviews from other explorers.",
+      icon: 'cafe-outline',
+      suggestions: ['Directions to Mossy Stone', 'What else is nearby?'],
+    };
+  }
+
+  if (lower.includes('wildlife') || lower.includes('animal') || lower.includes('bird') || lower.includes('eagle')) {
+    return {
+      text: "Active wildlife sightings near you:\n\n- Eagle Nesting Grounds (3.4 km) — Multiple bald eagle sightings this morning. Best viewed from the south overlook.\n- Deer are frequently spotted along Fern Valley North in the early morning.\n- A family of otters has been seen at Cedar Creek crossing.\n\nEagle Nesting Grounds earns 300 WANDR Points — the highest nearby. Keep quiet and bring binoculars!",
+      icon: 'paw-outline',
+      suggestions: ['Guide me to Eagle Nesting', 'What wildlife is active now?'],
+    };
+  }
+
+  if (lower.includes('quiet') || lower.includes('peaceful') || lower.includes('calm') || lower.includes('alone')) {
+    return {
+      text: "Looking for some solitude? Here's what I'd recommend right now:\n\n- Fern Valley North entrance — only 2 people passed in the last hour. The creek area is completely empty.\n- The overlook at Misty Ridge — the crowds usually head to Sunset Point instead.\n\nBased on patterns, the quietest time today will be between 2-4 PM. I can ping you when crowd density drops even further.",
+      icon: 'leaf-outline',
+      suggestions: ['Remind me at 2 PM', 'Find more quiet spots'],
+    };
+  }
+
+  if (lower.includes('sunset') || lower.includes('golden hour') || lower.includes('sunrise') || lower.includes('photo')) {
+    return {
+      text: "Golden hour at Sunset Point is at 6:47 PM today — about 20 minutes away. The western ridge will have the best light.\n\nFor sunrise tomorrow, Eagle Ridge faces east and catches first light at 6:12 AM. Both spots earn bonus WANDR Points during golden hour.\n\nI'll save a reminder 30 minutes before if you'd like to catch it.",
+      icon: 'sunny-outline',
+      suggestions: ['Set a sunset reminder', 'Best photo spots nearby'],
+    };
+  }
+
+  if (lower.includes('point') || lower.includes('reward') || lower.includes('wandr') || lower.includes('afk') || lower.includes('earn')) {
+    return {
+      text: "Here's how to maximize your WANDR Points today:\n\n- Complete Fern Valley North loop: +120 points\n- Visit Eagle Nesting Grounds: +300 points\n- Capture a verified moment at Sunset Point: +200 points\n- Share an adventure to the feed: +50 points\n\nYou're 1,550 points from Explorer tier. A full day exploring could get you there!",
+      icon: 'trophy-outline',
+      suggestions: ['Plan my route for max points', 'How does $AFK work?'],
+    };
+  }
+
+  if (lower.includes('map') || lower.includes('direction') || lower.includes('guide') || lower.includes('route') || lower.includes('navigate')) {
+    return {
+      text: "I can guide you to any nearby spot. Here's what's closest:\n\n- The Mossy Stone Cafe — 0.5 km, ~6 min walk\n- Misty Ridge Trail — 1.2 km, ~15 min walk\n- Sunset Point Overlook — 2.8 km, ~35 min walk\n\nI'll track your route and verify your steps for WANDR Points along the way. Where would you like to go?",
+      icon: 'map-outline',
+      suggestions: ['Guide me to the nearest spot', 'Show all nearby spots'],
+    };
+  }
+
+  if (lower.includes('weather') || lower.includes('temperature') || lower.includes('rain') || lower.includes('conditions')) {
+    return {
+      text: "Current conditions in Fern Valley:\n\n- 18°C, clear skies, light breeze from the west\n- UV index: moderate (sunscreen recommended after noon)\n- No rain expected until Thursday\n- Trail conditions: dry, all paths clear\n\nPerfect conditions for outdoor exploration today.",
+      icon: 'cloud-outline',
+      suggestions: ['Best time to hike today?', 'Weekly forecast'],
+    };
+  }
+
+  if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey') || lower.includes('morning') || lower.includes('afternoon')) {
+    return {
+      text: "Hey there! Great to see you exploring today. Conditions are perfect — 18°C, clear skies, and the trails are quiet.\n\nAnything specific you're looking for? I can find trails, cafes, wildlife spots, or suggest the best route to maximize your WANDR Points today.",
+      icon: 'hand-left-outline',
+    };
+  }
+
+  if (lower.includes('help') || lower.includes('what can you do') || lower.includes('how do')) {
+    return {
+      text: "I'm your quiet sixth sense for the real world. Here's what I can help with:\n\n- Find trails, cafes, and hidden gems nearby\n- Suggest quieter routes with fewer crowds\n- Track wildlife sightings in your area\n- Optimize your route for WANDR Points\n- Alert you to golden hour and special conditions\n\nJust ask naturally — I'm always monitoring nearby conditions in the background.",
+      icon: 'sparkles-outline',
+    };
+  }
+
+  // Default contextual fallback
+  const fallbacks: AgentResponse[] = [
+    {
+      text: "Interesting question! Based on your current location near Fern Valley, I'd suggest heading to the North loop trailhead — it's the best-kept secret around here. Only a 10-minute walk from where you are.\n\nWant me to look into anything specific? I can check trails, cafes, wildlife, or weather conditions.",
+      icon: 'compass-outline',
+      suggestions: ['What trails are nearby?', 'Find something unique'],
+    },
+    {
+      text: "Let me think about that... While I work on it, here's something you might enjoy: the Mossy Stone Cafe is just 0.5 km away and gets great reviews from other explorers. The outdoor patio overlooks a creek — perfect for a break.\n\nI can also check trails, weather, or wildlife in your area. What sounds good?",
+      icon: 'sparkles-outline',
+      suggestions: ['Nearby trails', 'Find a cafe'],
+    },
+    {
+      text: "I'm always scanning for the best experiences near you. Right now, crowd density is low on most trails and the weather is ideal for exploration.\n\nYou're 1,550 WANDR Points from the next tier. A good loop through Misty Ridge and Sunset Point could earn you 320+ points today. Want me to plan a route?",
+      icon: 'analytics-outline',
+      suggestions: ['Plan a route', 'What can I earn today?'],
+    },
+  ];
+
+  return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+}
+
 export function AgentScreen() {
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [inputText, setInputText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
-  const sendMessage = () => {
-    if (!inputText.trim()) return;
+  const sendMessage = (text?: string) => {
+    const messageText = (text || inputText).trim();
+    if (!messageText) return;
 
     const userMsg: Message = {
       id: Date.now().toString(),
       type: 'user',
-      text: inputText.trim(),
+      text: messageText,
       timestamp: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
     };
 
     setMessages((prev) => [...prev, userMsg]);
     setInputText('');
+    setIsTyping(true);
 
-    // Simulated agent response
+    const delay = 800 + Math.random() * 800;
     setTimeout(() => {
+      const response = getAgentResponse(messageText);
       const agentMsg: Message = {
         id: (Date.now() + 1).toString(),
         type: 'agent',
-        text: "Let me look into that for you. Based on your location and preferences, I have a few suggestions that should work well. Give me a moment to find the best options nearby.",
+        text: response.text,
         timestamp: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
-        icon: 'sparkles-outline',
+        icon: response.icon,
       };
-      setMessages((prev) => [...prev, agentMsg]);
-    }, 1200);
+
+      const newMessages: Message[] = [agentMsg];
+
+      if (response.suggestions) {
+        response.suggestions.forEach((suggestion, i) => {
+          newMessages.push({
+            id: (Date.now() + 2 + i).toString(),
+            type: 'suggestion',
+            text: suggestion,
+            timestamp: '',
+            icon: 'arrow-forward-outline',
+          });
+        });
+      }
+
+      setMessages((prev) => [...prev, ...newMessages]);
+      setIsTyping(false);
+    }, delay);
   };
 
   const renderMessage = (msg: Message) => {
@@ -110,9 +241,7 @@ export function AgentScreen() {
         <TouchableOpacity
           key={msg.id}
           style={styles.suggestionBubble}
-          onPress={() => {
-            setInputText(msg.text);
-          }}
+          onPress={() => sendMessage(msg.text)}
         >
           {msg.icon && <Ionicons name={msg.icon} size={16} color={Colors.primary} />}
           <Text style={styles.suggestionText}>{msg.text}</Text>
@@ -157,7 +286,7 @@ export function AgentScreen() {
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
-      <LinearGradient colors={Colors.gradientForest} style={styles.header}>
+      <LinearGradient colors={Colors.gradientForest} style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 12 }]}>
         <View style={styles.headerContent}>
           <View style={styles.agentHeaderIcon}>
             <Ionicons name="sparkles" size={24} color={Colors.accentLight} />
@@ -200,6 +329,20 @@ export function AgentScreen() {
           </View>
 
           {messages.map(renderMessage)}
+
+          {isTyping && (
+            <View style={styles.agentBubbleContainer}>
+              <View style={styles.agentRow}>
+                <View style={styles.agentAvatar}>
+                  <Ionicons name="sparkles" size={16} color={Colors.accentLight} />
+                </View>
+                <View style={styles.agentBubble}>
+                  <Text style={styles.typingText}>Thinking...</Text>
+                </View>
+              </View>
+            </View>
+          )}
+
           <View style={{ height: 20 }} />
         </ScrollView>
 
@@ -214,7 +357,7 @@ export function AgentScreen() {
             <TouchableOpacity
               key={action.id}
               style={styles.quickActionChip}
-              onPress={() => setInputText(action.label)}
+              onPress={() => sendMessage(action.label)}
             >
               <Ionicons name={action.icon} size={14} color={Colors.primary} />
               <Text style={styles.quickActionText}>{action.label}</Text>
@@ -232,10 +375,11 @@ export function AgentScreen() {
             onChangeText={setInputText}
             multiline
             maxLength={500}
+            onSubmitEditing={() => sendMessage()}
           />
           <TouchableOpacity
             style={[styles.sendButton, inputText.trim() && styles.sendButtonActive]}
-            onPress={sendMessage}
+            onPress={() => sendMessage()}
             disabled={!inputText.trim()}
           >
             <Ionicons
@@ -256,7 +400,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.offWhite,
   },
   header: {
-    paddingTop: 60,
     paddingBottom: Spacing.md,
     paddingHorizontal: Spacing.md,
   },
@@ -367,6 +510,12 @@ const styles = StyleSheet.create({
     ...Typography.body,
     color: Colors.charcoal,
     fontSize: 15,
+  },
+  typingText: {
+    ...Typography.body,
+    color: Colors.midGray,
+    fontSize: 15,
+    fontStyle: 'italic',
   },
   userBubbleContainer: {
     alignItems: 'flex-end',
