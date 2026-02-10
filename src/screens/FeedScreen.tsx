@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,13 @@ import {
   TouchableOpacity,
   StatusBar,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
 import { Avatar, Card } from '../components';
+
+const LIKED_KEY = '@wandrlust/liked_posts';
 
 interface Adventure {
   id: string;
@@ -90,13 +94,21 @@ const FEED_DATA: Adventure[] = [
 ];
 
 export function FeedScreen() {
+  const navigation = useNavigation<any>();
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    AsyncStorage.getItem(LIKED_KEY).then((value) => {
+      if (value) setLikedPosts(new Set(JSON.parse(value)));
+    });
+  }, []);
 
   const toggleLike = (id: string) => {
     setLikedPosts((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      AsyncStorage.setItem(LIKED_KEY, JSON.stringify([...next]));
       return next;
     });
   };
@@ -198,6 +210,9 @@ export function FeedScreen() {
           <TouchableOpacity style={styles.headerButton}>
             <Ionicons name="notifications-outline" size={24} color={Colors.charcoal} />
             <View style={styles.notificationDot} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+            <Avatar name="You" size={32} />
           </TouchableOpacity>
         </View>
       </View>

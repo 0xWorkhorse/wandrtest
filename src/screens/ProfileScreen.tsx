@@ -6,11 +6,17 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  Alert,
+  Platform,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
 import { Avatar, Card } from '../components';
+
+const ONBOARDED_KEY = '@wandrlust/onboarded';
 
 const ADVENTURE_GALLERY = [
   { id: '1', color: Colors.primary, icon: 'trail-sign' as const, label: 'Fern Valley' },
@@ -39,6 +45,32 @@ const SETTINGS_ITEMS = [
 ];
 
 export function ProfileScreen() {
+  const navigation = useNavigation<any>();
+
+  const handleLogout = () => {
+    const doLogout = async () => {
+      await AsyncStorage.removeItem(ONBOARDED_KEY);
+      // Trigger a reload to show onboarding again
+      if (Platform.OS === 'web') {
+        window.location.reload();
+      } else {
+        // On native, expo-updates or a state reset would handle this.
+        // For now, navigate back and the RootNavigator will re-check.
+        await AsyncStorage.clear();
+        navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      doLogout();
+    } else {
+      Alert.alert('Log Out', 'Are you sure you want to log out?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Log Out', style: 'destructive', onPress: doLogout },
+      ]);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -47,9 +79,15 @@ export function ProfileScreen() {
         {/* Profile header */}
         <LinearGradient colors={Colors.gradientForest} style={styles.header}>
           <View style={styles.headerTop}>
-            <TouchableOpacity>
-              <Ionicons name="share-outline" size={22} color={Colors.white} />
-            </TouchableOpacity>
+            {navigation.canGoBack() ? (
+              <TouchableOpacity onPress={() => navigation.goBack()}>
+                <Ionicons name="arrow-back" size={22} color={Colors.white} />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity>
+                <Ionicons name="share-outline" size={22} color={Colors.white} />
+              </TouchableOpacity>
+            )}
             <TouchableOpacity>
               <Ionicons name="settings-outline" size={22} color={Colors.white} />
             </TouchableOpacity>
@@ -182,7 +220,7 @@ export function ProfileScreen() {
           </Card>
         </View>
 
-        <TouchableOpacity style={styles.logoutButton}>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={18} color={Colors.error} />
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>

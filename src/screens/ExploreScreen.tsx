@@ -21,6 +21,15 @@ const CATEGORIES = [
   { id: 'hidden', label: 'Hidden Gems', icon: 'diamond-outline' as const },
 ];
 
+const CATEGORY_TYPE_MAP: Record<string, string[]> = {
+  all: [],
+  trails: ['Trail'],
+  cafes: ['Cafe'],
+  views: ['View'],
+  wildlife: ['Wildlife'],
+  hidden: ['Hidden Gem'],
+};
+
 const NEARBY_SPOTS = [
   {
     id: '1',
@@ -61,6 +70,16 @@ const NEARBY_SPOTS = [
     wandrPoints: 300,
     image: null,
     color: Colors.sage,
+  },
+  {
+    id: '5',
+    name: 'The Whispering Arch',
+    distance: '4.1 km',
+    type: 'Hidden Gem',
+    rating: 5.0,
+    wandrPoints: 500,
+    image: null,
+    color: Colors.accent,
   },
 ];
 
@@ -185,7 +204,13 @@ export function ExploreScreen() {
             </TouchableOpacity>
           </View>
 
-          {NEARBY_SPOTS.map((spot) => (
+          {NEARBY_SPOTS
+            .filter((spot) => {
+              if (activeCategory === 'all') return true;
+              const types = CATEGORY_TYPE_MAP[activeCategory] || [];
+              return types.includes(spot.type);
+            })
+            .map((spot) => (
             <TouchableOpacity key={spot.id} activeOpacity={0.7}>
               <Card style={styles.spotCard}>
                 <View style={styles.spotRow}>
@@ -198,7 +223,9 @@ export function ExploreScreen() {
                           ? 'eye'
                           : spot.type === 'Cafe'
                           ? 'cafe'
-                          : 'leaf'
+                          : spot.type === 'Wildlife'
+                          ? 'leaf'
+                          : 'diamond'
                       }
                       size={24}
                       color={spot.color}
