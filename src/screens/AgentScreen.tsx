@@ -506,6 +506,8 @@ const styles = StyleSheet.create({
   },
   messagesContent: {
     padding: Spacing.md,
+    flexGrow: 1,
+    justifyContent: 'flex-end',
   },
   contextCard: {
     flexDirection: 'row',
