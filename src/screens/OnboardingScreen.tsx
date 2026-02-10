@@ -3,17 +3,17 @@ import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
-  FlatList,
+  ScrollView,
   Animated,
   StatusBar,
+  useWindowDimensions,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, BorderRadius } from '../theme';
+import { Colors, Typography, Spacing } from '../theme';
 import { Button } from '../components';
-
-const { width, height } = Dimensions.get('window');
 
 interface OnboardingSlide {
   id: string;
@@ -21,7 +21,7 @@ interface OnboardingSlide {
   title: string;
   subtitle: string;
   description: string;
-  gradient: string[];
+  gradient: [string, string, string];
 }
 
 const slides: OnboardingSlide[] = [
@@ -68,87 +68,95 @@ interface Props {
 }
 
 export function OnboardingScreen({ onComplete }: Props) {
+  const { width, height } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
+  const scrollRef = useRef<ScrollView>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
 
   const handleNext = () => {
     if (activeIndex < slides.length - 1) {
-      flatListRef.current?.scrollToIndex({ index: activeIndex + 1 });
-      setActiveIndex(activeIndex + 1);
+      const nextIndex = activeIndex + 1;
+      scrollRef.current?.scrollTo({ x: nextIndex * width, animated: true });
+      setActiveIndex(nextIndex);
     } else {
       onComplete();
     }
   };
 
-  const renderSlide = ({ item }: { item: OnboardingSlide }) => (
-    <LinearGradient colors={item.gradient as [string, string, ...string[]]} style={styles.slide}>
-      <StatusBar barStyle="light-content" />
-      <View style={styles.slideContent}>
-        <View style={styles.iconContainer}>
-          <View style={styles.iconRing}>
-            <Ionicons name={item.icon} size={56} color={Colors.white} />
-          </View>
-        </View>
-
-        <Text style={styles.subtitle}>{item.subtitle}</Text>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.description}>{item.description}</Text>
-      </View>
-    </LinearGradient>
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+    { useNativeDriver: false }
   );
 
-  const renderDots = () => (
-    <View style={styles.dotsContainer}>
-      {slides.map((_, index) => {
-        const inputRange = [
-          (index - 1) * width,
-          index * width,
-          (index + 1) * width,
-        ];
-        const dotWidth = scrollX.interpolate({
-          inputRange,
-          outputRange: [8, 24, 8],
-          extrapolate: 'clamp',
-        });
-        const dotOpacity = scrollX.interpolate({
-          inputRange,
-          outputRange: [0.4, 1, 0.4],
-          extrapolate: 'clamp',
-        });
-
-        return (
-          <Animated.View
-            key={index}
-            style={[styles.dot, { width: dotWidth, opacity: dotOpacity }]}
-          />
-        );
-      })}
-    </View>
-  );
+  const handleScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const index = Math.round(e.nativeEvent.contentOffset.x / width);
+    setActiveIndex(index);
+  };
 
   return (
     <View style={styles.container}>
-      <FlatList
-        ref={flatListRef}
-        data={slides}
-        renderItem={renderSlide}
+      <StatusBar barStyle="light-content" />
+
+      <ScrollView
+        ref={scrollRef}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.id}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: false }
-        )}
-        onMomentumScrollEnd={(e) => {
-          const index = Math.round(e.nativeEvent.contentOffset.x / width);
-          setActiveIndex(index);
-        }}
-      />
+        onScroll={handleScroll}
+        onMomentumScrollEnd={handleScrollEnd}
+        scrollEventThrottle={16}
+        decelerationRate="fast"
+        snapToInterval={width}
+        snapToAlignment="start"
+      >
+        {slides.map((item) => (
+          <LinearGradient
+            key={item.id}
+            colors={item.gradient}
+            style={{ width, height }}
+          >
+            <View style={styles.slideContent}>
+              <View style={styles.iconContainer}>
+                <View style={styles.iconRing}>
+                  <Ionicons name={item.icon} size={56} color={Colors.white} />
+                </View>
+              </View>
+
+              <Text style={styles.subtitle}>{item.subtitle}</Text>
+              <Text style={styles.title}>{item.title}</Text>
+              <Text style={styles.description}>{item.description}</Text>
+            </View>
+          </LinearGradient>
+        ))}
+      </ScrollView>
 
       <View style={styles.footer}>
-        {renderDots()}
+        <View style={styles.dotsContainer}>
+          {slides.map((_, index) => {
+            const inputRange = [
+              (index - 1) * width,
+              index * width,
+              (index + 1) * width,
+            ];
+            const dotWidth = scrollX.interpolate({
+              inputRange,
+              outputRange: [8, 24, 8],
+              extrapolate: 'clamp',
+            });
+            const dotOpacity = scrollX.interpolate({
+              inputRange,
+              outputRange: [0.4, 1, 0.4],
+              extrapolate: 'clamp',
+            });
+
+            return (
+              <Animated.View
+                key={index}
+                style={[styles.dot, { width: dotWidth, opacity: dotOpacity }]}
+              />
+            );
+          })}
+        </View>
 
         <View style={styles.buttonRow}>
           {activeIndex < slides.length - 1 && (
@@ -171,10 +179,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.primaryDark,
-  },
-  slide: {
-    width,
-    height,
   },
   slideContent: {
     flex: 1,
