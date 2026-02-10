@@ -28,6 +28,8 @@ jobs:
       - run: npm ci
 
       - run: npx expo export --platform web
+        env:
+          DEPLOY_TARGET: gh-pages
 
       - uses: actions/upload-pages-artifact@v3
         with:
