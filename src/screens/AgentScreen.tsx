@@ -10,6 +10,7 @@ import {
   Platform,
   StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, BorderRadius } from '../theme';
@@ -183,6 +184,7 @@ function getAgentResponse(userText: string): AgentResponse {
 }
 
 export function AgentScreen() {
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -284,7 +286,7 @@ export function AgentScreen() {
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
-      <LinearGradient colors={Colors.gradientForest} style={styles.header}>
+      <LinearGradient colors={Colors.gradientForest} style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 12 }]}>
         <View style={styles.headerContent}>
           <View style={styles.agentHeaderIcon}>
             <Ionicons name="sparkles" size={24} color={Colors.accentLight} />
@@ -398,7 +400,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.offWhite,
   },
   header: {
-    paddingTop: 60,
     paddingBottom: Spacing.md,
     paddingHorizontal: Spacing.md,
   },

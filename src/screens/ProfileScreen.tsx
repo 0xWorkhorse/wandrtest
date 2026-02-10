@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -46,6 +47,7 @@ const SETTINGS_ITEMS = [
 
 export function ProfileScreen() {
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
 
   const handleLogout = () => {
     const doLogout = async () => {
@@ -77,7 +79,7 @@ export function ProfileScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Profile header */}
-        <LinearGradient colors={Colors.gradientForest} style={styles.header}>
+        <LinearGradient colors={Colors.gradientForest} style={[styles.header, { paddingTop: Math.max(insets.top, 12) + 12 }]}>
           <View style={styles.headerTop}>
             {navigation.canGoBack() ? (
               <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -237,7 +239,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.offWhite,
   },
   header: {
-    paddingTop: 60,
     paddingBottom: Spacing.lg,
     paddingHorizontal: Spacing.md,
   },
